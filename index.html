@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sailwave → PHRF Lake Ontario File Conversion</title>
+    <!-- JSZip for multi-file zipped downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        h1 { margin-top: 0; color: #1a365d; font-size: 1.6rem; }
+        p { color: #4a5568; line-height: 1.5; }
+        .drop-zone {
+            display: block;
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 35px 20px;
+            text-align: center;
+            background: #f7fafc;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+            margin: 20px 0;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #3182ce;
+            background-color: #ebf8ff;
+        }
+        .drop-zone * { pointer-events: none; }
+        #fileInput { display: none; }
+        
+        .results-section {
+            margin-top: 25px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        .file-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #ffffff;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .file-left { display: flex; align-items: center; gap: 12px; }
+        .file-name { font-weight: 600; color: #1a202c; font-size: 0.95rem; }
+        .file-meta { font-size: 0.85rem; color: #718096; margin-top: 2px; }
+        .btn {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background-color: #2b6cb0; }
+        .btn-zip { background-color: #2f855a; padding: 9px 18px; font-size: 0.95rem; font-weight: 500; }
+        .btn-zip:hover { background-color: #276749; }
+        .btn-outline { background-color: transparent; color: #2b6cb0; border: 1px solid #cbd5e0; }
+        .btn-outline:hover { background-color: #ebf8ff; }
+        .error { color: #c53030; font-weight: 500; }
+        .checkbox-custom { width: 17px; height: 17px; cursor: pointer; }
+
+        /* Debug Console Styling */
+        .debug-section {
+            margin-top: 30px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+        .debug-console {
+            background-color: #1a202c;
+            color: #68d391;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.85rem;
+            padding: 15px;
+            border-radius: 6px;
+            height: 220px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Sailwave → PHRF Lake Ontario File Conversion</h1>
+    <p>Upload a Sailwave file (<code>.blw</code>). The extractor will automatically separate fleets into individual CSV files for PHRF-LO.</p>
+
+    <label for="fileInput" class="drop-zone" id="dropZone">
+        <p id="dropText">Drag & drop your Sailwave file here, or <strong>click to browse</strong></p>
+        <input type="file" id="fileInput" accept=".blw,.csv,.txt">
+    </label>
+
+    <div id="status"></div>
+
+    <div id="resultsSection" class="results-section" style="display: none;">
+        <h3>Converted Fleet Files</h3>
+        <p>The following files have been converted from your Sailwave data:</p>
+
+        <div class="controls-bar">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="selectAllCheckbox" class="checkbox-custom">
+                <strong>Select All</strong>
+            </label>
+        </div>
+
+        <ul id="fileList" class="file-list"></ul>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="downloadZipBtn" class="btn btn-zip">Download All Files (.zip)</button>
+            <button id="downloadSelectedBtn" class="btn btn-outline">Download Selected</button>
+        </div>
+    </div>
+
+    <!-- Debug Log Section (Off by default) -->
+    <div class="debug-section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #4a5568;">
+                <input type="checkbox" id="toggleDebugCheckbox" class="checkbox-custom">
+                <strong>Show Debug Console</strong>
+            </label>
+            <button class="btn btn-outline" style="padding: 3px 8px; font-size: 0.8rem;" onclick="clearLog()">Clear Console</button>
+        </div>
+        <div id="debugConsoleContainer" style="display: none;">
+            <div id="debugConsole" class="debug-console">Waiting for file upload...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================================
+// DEBUG LOGGING UTILITY
+// ============================================================================
+function log(msg) {
+    const consoleEl = document.getElementById('debugConsole');
+    consoleEl.textContent += '\n' + msg;
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+    console.log(msg);
+}
+
+function clearLog() {
+    document.getElementById('debugConsole').textContent = 'Console cleared. Waiting for file upload...';
+}
+
+const toggleDebugCheckbox = document.getElementById('toggleDebugCheckbox');
+const debugConsoleContainer = document.getElementById('debugConsoleContainer');
+
+toggleDebugCheckbox.addEventListener('change', (e) => {
+    debugConsoleContainer.style.display = e.target.checked ? 'block' : 'none';
+});
+
+// Global Drag & Drop defaults
+window.addEventListener("dragover", e => e.preventDefault(), false);
+window.addEventListener("drop", e => e.preventDefault(), false);
+
+// ============================================================================
+// SAILWAVE PARSER ENGINE (.BLW CSV-Style Format)
+// ============================================================================
+
+class Boat {
+    constructor(id) {
+        this.id = id;
+        this.helmName = "";
+        this.boatName = "";
+        this.sailNo = "";
+        this.classType = "";
+        this.rating = "";
+        this.fleet = "Main";
+        this.results = new Map(); // Key: raceId, Value: { points, code, pos }
+    }
+}
+
+class Race {
+    constructor(id, rank, name) {
+        this.id = id;
+        this.rank = rank;
+        this.name = name || `Race ${rank}`;
+    }
+}
+
+class SailwaveConversion {
+
+    static parseCSVLine(line) {
+        const result = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    cur += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c === ',' && !inQuotes) {
+                result.push(cur);
+                cur = '';
+            } else {
+                cur += c;
+            }
+        }
+        result.push(cur);
+        return result;
+    }
+
+    static parseSailwaveFile(rawText, baseFileName) {
+        log(`[Parser] Starting parsing for: ${baseFileName}`);
+        const lines = rawText.split(/\r?\n/);
+        log(`[Parser] Read ${lines.length} total lines.`);
+
+        const boatsMap = new Map();
+        const racesMap = new Map();
+
+        for (let rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) continue;
+
+            const parts = this.parseCSVLine(line);
+            if (parts.length < 2) continue;
+
+            const key = parts[0].toLowerCase();
+            const val = parts[1];
+            const compId = parts[2] || "";
+            const raceId = parts[3] || "";
+
+            // Parsing Competitors (comp...)
+            if (key.startsWith("comp") && compId) {
+                if (!boatsMap.has(compId)) {
+                    boatsMap.set(compId, new Boat(compId));
+                }
+                const boat = boatsMap.get(compId);
+
+                if (key === "compboat") boat.boatName = val;
+                else if (key === "comphelmname") boat.helmName = val;
+                else if (key === "compsailno") boat.sailNo = val;
+                else if (key === "compclass") boat.classType = val;
+                else if (key === "comprating") boat.rating = val;
+                else if (key === "compfleet") boat.fleet = val || "Main";
+            }
+
+            // Parsing Race Headers (race...)
+            else if (key.startsWith("race") && raceId) {
+                if (!racesMap.has(raceId)) {
+                    racesMap.set(raceId, new Race(raceId, racesMap.size + 1, ""));
+                }
+                const race = racesMap.get(raceId);
+                if (key === "racename") race.name = val;
+                else if (key === "racerank") race.rank = parseInt(val, 10) || race.rank;
+            }
+
+            // Parsing Race Results (rpts, rcod, rpos, etc.)
+            else if (compId && raceId) {
+                if (!boatsMap.has(compId)) boatsMap.set(compId, new Boat(compId));
+                const boat = boatsMap.get(compId);
+
+                if (!boat.results.has(raceId)) {
+                    boat.results.set(raceId, { points: "", code: "", pos: "" });
+                }
+                const res = boat.results.get(raceId);
+
+                if (key === "rpts") res.points = val;
+                else if (key === "rcod") res.code = val;
+                else if (key === "rpos") res.pos = val;
+            }
+        }
+
+        log(`[Parser] Extracted ${boatsMap.size} boats and ${racesMap.size} races.`);
+
+        if (boatsMap.size === 0) {
+            throw new Error("No competitor data found in Sailwave file.");
+        }
+
+        // Sort races by rank or insertion order
+        const sortedRaces = Array.from(racesMap.values()).sort((a, b) => a.rank - b.rank);
+
+        // Group boats by Fleet
+        const fleetGroups = new Map();
+        for (const boat of boatsMap.values()) {
+            const fleetKey = boat.fleet.trim() || "Main";
+            if (!fleetGroups.has(fleetKey)) fleetGroups.set(fleetKey, []);
+            fleetGroups.get(fleetKey).push(boat);
+        }
+
+        log(`[Parser] Formatted into ${fleetGroups.size} fleet CSVs: [ ${Array.from(fleetGroups.keys()).join(", ")} ]`);
+
+        const cleanBaseName = baseFileName.replace(/\.[^/.]+$/, "");
+        const outputFiles = [];
+
+        for (const [fleetName, fleetBoats] of fleetGroups.entries()) {
+            let csvLines = [];
+            
+            // Header line
+            let header = "SailNo,HelmName,BoatName,Class,Rating";
+            if (sortedRaces.length > 0) {
+                header += "," + sortedRaces.map(r => this.escapeCSV(r.name || `Race ${r.rank}`)).join(",");
+            }
+            csvLines.push(header);
+
+            // Boat rows
+            for (const boat of fleetBoats) {
+                let row = [
+                    this.escapeCSV(boat.sailNo),
+                    this.escapeCSV(boat.helmName),
+                    this.escapeCSV(boat.boatName),
+                    this.escapeCSV(boat.classType),
+                    this.escapeCSV(boat.rating)
+                ];
+
+                for (const race of sortedRaces) {
+                    const res = boat.results.get(race.id);
+                    let scoreVal = "";
+                    if (res) {
+                        scoreVal = res.code ? res.code : res.points;
+                    }
+                    row.push(this.escapeCSV(scoreVal));
+                }
+
+                csvLines.push(row.join(","));
+            }
+
+            const formattedFleetName = fleetName.replace(/\s+/g, "_");
+            const fileName = `${cleanBaseName}_${formattedFleetName}.csv`;
+
+            outputFiles.push({
+                fileName: fileName,
+                content: csvLines.join("\n"),
+                rowCount: fleetBoats.length
+            });
+        }
+
+        return outputFiles;
+    }
+
+    static escapeCSV(val) {
+        if (!val) return '""';
+        const str = String(val);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+}
+
+// ============================================================================
+// UI CONTROLLER
+// ============================================================================
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const statusDiv = document.getElementById('status');
+const resultsSection = document.getElementById('resultsSection');
+const fileList = document.getElementById('fileList');
+const downloadZipBtn = document.getElementById('downloadZipBtn');
+const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+let generatedFiles = [];
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+function handleFile(file) {
+    clearLog();
+    log(`[UI] Received file: ${file.name} (${file.size} bytes)`);
+    statusDiv.className = '';
+    statusDiv.textContent = `Reading "${file.name}"...`;
+    resultsSection.style.display = 'none';
+    fileList.innerHTML = '';
+    selectAllCheckbox.checked = false;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const rawContent = e.target.result;
+            generatedFiles = SailwaveConversion.parseSailwaveFile(rawContent, file.name);
+
+            renderFileList(generatedFiles);
+            statusDiv.textContent = '';
+            resultsSection.style.display = 'block';
+            log(`[UI] Conversion complete. ${generatedFiles.length} files ready for download.`);
+        } catch (err) {
+            log(`[UI Error] Exception: ${err.message}`);
+            statusDiv.className = 'error';
+            statusDiv.textContent = `Error processing file: ${err.message}`;
+        }
+    };
+    reader.readAsText(file);
+}
+
+function renderFileList(files) {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} at ${now.toLocaleTimeString()}`;
+
+    files.forEach((file, index) => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `
+            <div class="file-left">
+                <input type="checkbox" class="checkbox-custom item-checkbox" data-index="${index}">
+                <div>
+                    <div class="file-name">${file.fileName}</div>
+                    <div class="file-meta">Converted ${formattedDate} (${file.rowCount} boats)</div>
+                </div>
+            </div>
+            <div class="file-actions">
+                <button class="btn" onclick="downloadSingleFile(${index})">
+                    <span>⬇</span> Download/View
+                </button>
+            </div>
+        `;
+        fileList.appendChild(li);
+    });
+}
+
+selectAllCheckbox.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(cb => cb.checked = e.target.checked);
+});
+
+function downloadSingleFile(index) {
+    const file = generatedFiles[index];
+    const blob = new Blob([file.content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+downloadZipBtn.addEventListener('click', () => {
+    if (!JSZip || generatedFiles.length === 0) return;
+    const zip = new JSZip();
+    generatedFiles.forEach(file => zip.file(file.fileName, file.content));
+    
+    zip.generateAsync({ type: "blob" }).then(content => {
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "PHRF_LO_Converted_Files.zip";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+});
+
+downloadSelectedBtn.addEventListener('click', () => {
+    const selectedIndexes = Array.from(document.querySelectorAll('.item-checkbox:checked'))
+        .map(cb => parseInt(cb.getAttribute('data-index'), 10));
+
+    if (selectedIndexes.length === 0) {
+        alert("Please select at least one file to download.");
+        return;
+    }
+
+    if (selectedIndexes.length === 1) {
+        downloadSingleFile(selectedIndexes[0]);
+    } else {
+        const zip = new JSZip();
+        selectedIndexes.forEach(idx => {
+            const f = generatedFiles[idx];
+            zip.file(f.fileName, f.content);
+        });
+        zip.generateAsync({ type: "blob" }).then(content => {
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "PHRF_LO_Selected_Files.zip";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
