@@ -12,8 +12,8 @@
             background-color: #f4f6f8;
             color: #333;
             max-width: 850px;
-            margin: 40px auto;
-            padding: 20px;
+            margin: 30px auto;
+            padding: 15px;
         }
         .card {
             background: #ffffff;
@@ -21,18 +21,58 @@
             padding: 30px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
-        h1 { margin-top: 0; color: #1a365d; font-size: 1.6rem; }
+        h1 { margin-top: 0; color: #1a365d; font-size: 1.55rem; }
         p { color: #4a5568; line-height: 1.5; }
+
+        /* Step layout matching original workflow */
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #edf2f7;
+        }
+        .step-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 10px;
+            padding-bottom: 0;
+        }
+        .step-badge {
+            background: linear-gradient(145deg, #4a5568, #1a202c);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-top: 2px;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-title {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.98rem;
+        }
+
         .drop-zone {
             display: block;
             border: 2px dashed #cbd5e0;
             border-radius: 6px;
-            padding: 35px 20px;
+            padding: 20px;
             text-align: center;
             background: #f7fafc;
             cursor: pointer;
             transition: border-color 0.2s, background-color 0.2s;
-            margin: 20px 0;
         }
         .drop-zone:hover, .drop-zone.dragover {
             border-color: #3182ce;
@@ -40,10 +80,46 @@
         }
         .drop-zone * { pointer-events: none; }
         #fileInput { display: none; }
-        
+
+        .text-input {
+            width: 100%;
+            max-width: 360px;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #1a202c;
+        }
+        .text-input:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+        }
+
+        .radio-group {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 4px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #1a202c;
+        }
+        .radio-item input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
         .results-section {
             margin-top: 25px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 2px solid #e2e8f0;
             padding-top: 20px;
         }
         .controls-bar {
@@ -71,21 +147,27 @@
             background-color: #3182ce;
             color: white;
             border: none;
-            padding: 7px 14px;
+            padding: 8px 16px;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            font-weight: 500;
         }
-        .btn:hover { background-color: #2b6cb0; }
-        .btn-zip { background-color: #2f855a; padding: 9px 18px; font-size: 0.95rem; font-weight: 500; }
+        .btn:hover:not(:disabled) { background-color: #2b6cb0; }
+        .btn:disabled {
+            background-color: #cbd5e0;
+            color: #718096;
+            cursor: not-allowed;
+        }
+        .btn-zip { background-color: #2f855a; padding: 9px 18px; font-size: 0.95rem; }
         .btn-zip:hover { background-color: #276749; }
         .btn-outline { background-color: transparent; color: #2b6cb0; border: 1px solid #cbd5e0; }
         .btn-outline:hover { background-color: #ebf8ff; }
-        .error { color: #c53030; font-weight: 500; }
+        .error { color: #c53030; font-weight: 500; margin-top: 10px; }
         .checkbox-custom { width: 17px; height: 17px; cursor: pointer; }
 
         /* Debug Console Styling */
@@ -113,12 +195,58 @@
 
 <div class="card">
     <h1>Sailwave → PHRF Lake Ontario File Conversion</h1>
-    <p>Upload a Sailwave file (<code>.blw</code>). The extractor will automatically separate fleets into individual CSV files for PHRF-LO.</p>
+    <p>Welcome to the PHRF Lake Ontario Sailwave conversion program. Please specify the Sailwave file (extension <code>.blw</code>) you wish to convert:</p>
 
-    <label for="fileInput" class="drop-zone" id="dropZone">
-        <p id="dropText">Drag & drop your Sailwave file here, or <strong>click to browse</strong></p>
-        <input type="file" id="fileInput" accept=".blw,.csv,.txt">
-    </label>
+    <!-- Step 1: File Selection -->
+    <div class="step-row">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+            <span class="step-title">Select Sailwave file (<code>.blw</code>):</span>
+            <label for="fileInput" class="drop-zone" id="dropZone">
+                <p id="dropText" style="margin: 0;">Drag & drop your Sailwave file here, or <strong>click to browse</strong></p>
+                <input type="file" id="fileInput" accept=".blw,.csv,.txt">
+            </label>
+        </div>
+    </div>
+
+    <!-- Step 2: Optional Club Name -->
+    <div class="step-row">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+            <label for="clubNameInput" class="step-title">Enter the club name (optional):</label>
+            <input type="text" id="clubNameInput" class="text-input" placeholder="Leave blank to auto-detect from Sailwave file">
+        </div>
+    </div>
+
+    <!-- Step 3: Separate Fleet By -->
+    <div class="step-row">
+        <div class="step-badge">3</div>
+        <div class="step-content">
+            <span class="step-title">Separate fleet by:</span>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="fleetdiv" value="auto" checked>
+                    <span>Automatically detect</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="fleetdiv" value="div">
+                    <span>Division</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="fleetdiv" value="fleet">
+                    <span>Fleet</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Convert Button -->
+    <div class="step-row">
+        <div class="step-badge">4</div>
+        <div class="step-content">
+            <button id="convertBtn" class="btn" disabled>Convert</button>
+        </div>
+    </div>
 
     <div id="status"></div>
 
@@ -183,31 +311,235 @@ window.addEventListener("dragover", e => e.preventDefault(), false);
 window.addEventListener("drop", e => e.preventDefault(), false);
 
 // ============================================================================
-// SAILWAVE PARSER ENGINE (.BLW CSV-Style Format)
+// PORTED JAVA MODEL CLASSES (Boat.java, Race.java, Result.java)
 // ============================================================================
 
 class Boat {
     constructor(id) {
         this.id = id;
-        this.helmName = "";
-        this.boatName = "";
-        this.sailNo = "";
-        this.classType = "";
-        this.rating = "";
-        this.fleet = "Main";
-        this.results = new Map(); // Key: raceId, Value: { points, code, pos }
+        this.rawBoatName = null;
+        this.rawBoatClass = null;
+        this.rawBoatRating = null;
+        this.rawBoatOwner = null;
+        this.rawSailNumber = null;
+        this.rawFleet = null;
+        this.rawDivision = null;
+        this.rawClubName = null;
+        this.rawExclude = null;
+        this.results = new Map(); // Key: raceId, Value: Result
+    }
+
+    getDivision() {
+        if (!this.rawDivision || this.rawDivision.trim().length === 0) return null;
+        return this.rawDivision;
+    }
+
+    getFleet() {
+        if (!this.rawFleet || this.rawFleet.trim().length === 0) return null;
+        return this.rawFleet;
+    }
+
+    isExcluded() {
+        const exclude = (!this.rawExclude || this.rawExclude.trim().length === 0) ? "0" : this.rawExclude;
+        return exclude.trim() === "1";
+    }
+
+    getAutoDivisionOrFleet() {
+        let divisionOrFleet = this.getDivision();
+        if (divisionOrFleet === null) {
+            divisionOrFleet = this.getFleet();
+        }
+        if (divisionOrFleet === null) {
+            divisionOrFleet = "nofleet";
+        }
+        return divisionOrFleet;
+    }
+
+    getClubname() {
+        if (!this.rawClubName || this.rawClubName.trim().length === 0) return "noclub";
+        return this.rawClubName;
+    }
+
+    getBoatName() {
+        if (!this.rawBoatName || this.rawBoatName.trim().length === 0) return "noname";
+        return this.rawBoatName;
+    }
+
+    getBoatClass() {
+        if (!this.rawBoatClass || this.rawBoatClass.trim().length === 0) return "noclass";
+        return this.rawBoatClass;
+    }
+
+    getBoatRating() {
+        if (!this.rawBoatRating || this.rawBoatRating.trim().length === 0) return "0";
+        return this.rawBoatRating;
+    }
+
+    getBoatOwner() {
+        if (!this.rawBoatOwner || this.rawBoatOwner.trim().length === 0) return "na";
+        return this.rawBoatOwner;
+    }
+
+    getSailNumber() {
+        if (!this.rawSailNumber || this.rawSailNumber.trim().length === 0) return "0";
+        return this.rawSailNumber;
     }
 }
 
 class Race {
-    constructor(id, rank, name) {
+    constructor(id, insertionOrder) {
         this.id = id;
-        this.rank = rank;
-        this.name = name || `Race ${rank}`;
+        this.insertionOrder = insertionOrder;
+        this.rank = null;
+        this.date = null;
+        this.name = null;
+        this.raceStart = null; // First racestart entry (duplicates ignored per SWEntry)
+        this.notes = null;
+    }
+
+    getDate() {
+        return this.date;
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    getRaceStart() {
+        return this.raceStart;
+    }
+
+    getNotes() {
+        return this.notes;
+    }
+
+    calculateWindSpeed() {
+        let windSpeed = null;
+        const start = this.getRaceStart();
+        if (start && start.trim().length > 0 && start.indexOf('|') > -1) {
+            // "||Place|Start 1|||0||0|0||12345||1" -> 11th delimiter index
+            const tokens = start.split('|');
+            if (tokens.length > 11 && tokens[11].length > 0) {
+                windSpeed = tokens[11];
+            }
+        }
+
+        // If nothing in the start, then use the race notes
+        if (windSpeed === null) {
+            windSpeed = this.getNotes();
+        }
+
+        // Extract leading number
+        if (windSpeed && windSpeed.length > 0) {
+            windSpeed = this.extractNumber(windSpeed);
+        }
+
+        if (windSpeed && windSpeed.length > 0) {
+            return windSpeed;
+        }
+        return "0";
+    }
+
+    extractNumber(s) {
+        s = s.trim();
+        let builder = "";
+        for (let i = 0; i < s.length; i++) {
+            const c = s.charAt(i);
+            if (c >= '0' && c <= '9') {
+                builder += c;
+            } else {
+                break;
+            }
+        }
+        return builder;
     }
 }
 
+class Result {
+    constructor() {
+        this.rele = null;
+        this.rrestyp = null;
+        this.rcod = null;
+    }
+
+    twoChars(num) {
+        let text = String(num);
+        if (text.length < 2) text = "0" + text;
+        return text;
+    }
+
+    getCleanElapsedTime() {
+        // Result Type:
+        // 0: Excluded boat
+        // 1: Place (so no time)
+        // 2: elapsed time
+        // 3: code (DNC, etc)
+        // 4: start/finish time
+        // Only use result types of 2 & 4 for PHRF
+        const resultType = this.rrestyp;
+        if (resultType && resultType.trim().length > 0) {
+            const rt = resultType.trim();
+            if (rt === "0" || rt === "1" || rt === "3") {
+                return "0";
+            }
+            if (rt !== "2" && rt !== "4") {
+                log(`[Result Warning] Don't know how to interpret result type: ${rt}`);
+            }
+        }
+
+        const timeString = this.rele;
+        if (!timeString || timeString.trim().length === 0) {
+            return "0";
+        }
+
+        let result = "0";
+        let hours = 0;
+        let mins = 0;
+        let secs = 0;
+
+        // format - mm:ss or hh:mm:ss tokenized by ":;.-/\"
+        const tokens = timeString.trim().split(/[:;.\-\/\\]+/).filter(t => t.length > 0);
+
+        if (tokens.length >= 2) {
+            const a = parseInt(tokens[0], 10);
+            const b = parseInt(tokens[1], 10);
+            if (isNaN(a) || isNaN(b)) return "0";
+
+            if (tokens.length >= 3) {
+                // Assume hh:mm:ss
+                hours = a;
+                mins = b;
+                secs = parseInt(tokens[2], 10) || 0;
+            } else {
+                // Assume mm:ss
+                mins = a;
+                secs = b;
+            }
+            result = this.twoChars(hours) + this.twoChars(mins) + this.twoChars(secs);
+        } else {
+            // No delimiters at all
+            const trimmed = timeString.trim();
+            if (trimmed.length === 4) result = "00" + trimmed;
+            else if (trimmed.length === 5) result = "0" + trimmed;
+            else if (trimmed.length === 6) result = trimmed;
+            else {
+                log(`[Result Warning] Don't know how to parse time string: ${trimmed}`);
+                result = trimmed;
+            }
+        }
+
+        return result;
+    }
+}
+
+// ============================================================================
+// PORTED SailwaveConversion.java ENGINE
+// ============================================================================
+
 class SailwaveConversion {
+    static SEPARATE_BY_AUTO = "auto";
+    static SEPARATE_BY_DIVISION = "div";
+    static SEPARATE_BY_FLEET = "fleet";
 
     static parseCSVLine(line) {
         const result = [];
@@ -233,141 +565,232 @@ class SailwaveConversion {
         return result;
     }
 
-    static parseSailwaveFile(rawText, baseFileName) {
-        log(`[Parser] Starting parsing for: ${baseFileName}`);
-        const lines = rawText.split(/\r?\n/);
-        log(`[Parser] Read ${lines.length} total lines.`);
+    static clean(text) {
+        if (text === null || text === undefined) return "";
+        let str = String(text);
+        if (str.indexOf('&') > 0) {
+            str = str.trim();
+        }
+        // Java: text.replaceAll("[\\x3B\\x60\\x22\\x2c\\x27]", " ")
+        return str.replace(/[\x3B\x60\x22\x2c\x27]/g, " ");
+    }
 
+    static parseFile(rawText, baseFileName) {
+        log(`[Parser] Reading Sailwave file: ${baseFileName}`);
+        const lines = rawText.split(/\r?\n/);
         const boatsMap = new Map();
         const racesMap = new Map();
+        let foundColumnKey = false;
 
-        for (let rawLine of lines) {
-            const line = rawLine.trim();
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
             if (!line) continue;
 
             const parts = this.parseCSVLine(line);
             if (parts.length < 2) continue;
 
-            const key = parts[0].toLowerCase();
+            const key = parts[0].trim();
             const val = parts[1];
-            const compId = parts[2] || "";
-            const raceId = parts[3] || "";
+            const col2 = parts[2] ? parts[2].trim() : "";
+            const col3 = parts[3] ? parts[3].trim() : "";
 
-            // Parsing Competitors (comp...)
-            if (key.startsWith("comp") && compId) {
-                if (!boatsMap.has(compId)) {
-                    boatsMap.set(compId, new Boat(compId));
-                }
-                const boat = boatsMap.get(compId);
-
-                if (key === "compboat") boat.boatName = val;
-                else if (key === "comphelmname") boat.helmName = val;
-                else if (key === "compsailno") boat.sailNo = val;
-                else if (key === "compclass") boat.classType = val;
-                else if (key === "comprating") boat.rating = val;
-                else if (key === "compfleet") boat.fleet = val || "Main";
+            if (!foundColumnKey && key === "column") {
+                foundColumnKey = true;
             }
 
-            // Parsing Race Headers (race...)
-            else if (key.startsWith("race") && raceId) {
-                if (!racesMap.has(raceId)) {
-                    racesMap.set(raceId, new Race(raceId, racesMap.size + 1, ""));
-                }
-                const race = racesMap.get(raceId);
-                if (key === "racename") race.name = val;
-                else if (key === "racerank") race.rank = parseInt(val, 10) || race.rank;
+            // Boat keys (instance ID in col2)
+            if (key.startsWith("comp") && col2) {
+                if (!boatsMap.has(col2)) boatsMap.set(col2, new Boat(col2));
+                const boat = boatsMap.get(col2);
+
+                if (key === "compboat") boat.rawBoatName = val;
+                else if (key === "compclass") boat.rawBoatClass = val;
+                else if (key === "comprating") boat.rawBoatRating = val;
+                else if (key === "comphelmname") boat.rawBoatOwner = val;
+                else if (key === "compsailno") boat.rawSailNumber = val;
+                else if (key === "compfleet") boat.rawFleet = val;
+                else if (key === "compdivision") boat.rawDivision = val;
+                else if (key === "compclub") boat.rawClubName = val;
+                else if (key === "compexclude") boat.rawExclude = val;
             }
+            // Race keys (instance ID in col3)
+            else if (key.startsWith("race") && col3) {
+                if (!racesMap.has(col3)) racesMap.set(col3, new Race(col3, racesMap.size + 1));
+                const race = racesMap.get(col3);
 
-            // Parsing Race Results (rpts, rcod, rpos, etc.)
-            else if (compId && raceId) {
-                if (!boatsMap.has(compId)) boatsMap.set(compId, new Boat(compId));
-                const boat = boatsMap.get(compId);
-
-                if (!boat.results.has(raceId)) {
-                    boat.results.set(raceId, { points: "", code: "", pos: "" });
+                if (key === "racerank") race.rank = parseInt(val, 10);
+                else if (key === "racedate") race.date = val;
+                else if (key === "racename") race.name = val;
+                else if (key === "racenotes") race.notes = val;
+                else if (key === "racestart" && race.raceStart === null) {
+                    // Only store the first racestart per race
+                    race.raceStart = val;
                 }
-                const res = boat.results.get(raceId);
+            }
+            // Result keys (row/boatId in col2, col/raceId in col3)
+            else if (col2 && col3) {
+                if (!boatsMap.has(col2)) boatsMap.set(col2, new Boat(col2));
+                const boat = boatsMap.get(col2);
 
-                if (key === "rpts") res.points = val;
-                else if (key === "rcod") res.code = val;
-                else if (key === "rpos") res.pos = val;
+                if (!boat.results.has(col3)) {
+                    boat.results.set(col3, new Result());
+                }
+                const res = boat.results.get(col3);
+
+                if (key === "rele") res.rele = val;
+                else if (key === "rrestyp") res.rrestyp = val;
+                else if (key === "rcod") res.rcod = val;
             }
         }
 
-        log(`[Parser] Extracted ${boatsMap.size} boats and ${racesMap.size} races.`);
-
-        if (boatsMap.size === 0) {
-            throw new Error("No competitor data found in Sailwave file.");
+        if (!foundColumnKey) {
+            log(`[Parser Warning] 'column' key not found in Sailwave file.`);
         }
 
-        // Sort races by rank or insertion order
-        const sortedRaces = Array.from(racesMap.values()).sort((a, b) => a.rank - b.rank);
+        // Preserve order of races (sorted by racerank if present, otherwise file order)
+        const raceList = Array.from(racesMap.values()).sort((a, b) => {
+            if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
+            return a.insertionOrder - b.insertionOrder;
+        });
 
-        // Group boats by Fleet
-        const fleetGroups = new Map();
+        // postProcessData(): remove excluded boats and boats with no results ("0" in all races)
+        const validBoats = [];
         for (const boat of boatsMap.values()) {
-            const fleetKey = boat.fleet.trim() || "Main";
-            if (!fleetGroups.has(fleetKey)) fleetGroups.set(fleetKey, []);
-            fleetGroups.get(fleetKey).push(boat);
+            let anyResults = false;
+            for (const race of raceList) {
+                const res = boat.results.get(race.id);
+                const resultsText = res ? res.getCleanElapsedTime() : "0";
+                if (resultsText !== "0") {
+                    anyResults = true;
+                    break;
+                }
+            }
+            if (anyResults && !boat.isExcluded()) {
+                validBoats.push(boat);
+            }
         }
 
-        log(`[Parser] Formatted into ${fleetGroups.size} fleet CSVs: [ ${Array.from(fleetGroups.keys()).join(", ")} ]`);
+        log(`[Parser] Post-processing complete: ${validBoats.length} active boats across ${raceList.length} races.`);
 
-        const cleanBaseName = baseFileName.replace(/\.[^/.]+$/, "");
+        if (validBoats.length === 0) {
+            throw new Error("No valid boat race results found in Sailwave file.");
+        }
+
+        return {
+            boats: validBoats,
+            races: raceList,
+            baseFileName: baseFileName
+        };
+    }
+
+    static getThisBoatsDivisionOrFleet(boat, separateBy) {
+        if (separateBy === this.SEPARATE_BY_AUTO) {
+            return boat.getAutoDivisionOrFleet();
+        } else if (separateBy === this.SEPARATE_BY_DIVISION) {
+            return boat.getDivision() || "nodivision";
+        } else if (separateBy === this.SEPARATE_BY_FLEET) {
+            return boat.getFleet() || "nofleet";
+        }
+        throw new Error("separateBy is incorrect: " + separateBy);
+    }
+
+    static getClubName(boats, userClubName) {
+        if (userClubName && userClubName.trim().length > 0) {
+            return userClubName.trim();
+        }
+        for (const boat of boats) {
+            const club = boat.getClubname();
+            if (club && club.trim().length > 0 && club !== "noclub") {
+                return club;
+            }
+        }
+        return "noclub";
+    }
+
+    static generatePHRFFiles(parsedData, separateBy, userClubName) {
+        const crlf = "\r\n";
+        const { boats, races, baseFileName } = parsedData;
+        const clubName = this.getClubName(boats, userClubName);
+
+        // getFleetList()
+        const fleetList = [];
+        for (const boat of boats) {
+            const thisBoatsDivisionOrFleet = this.getThisBoatsDivisionOrFleet(boat, separateBy);
+            if (!fleetList.includes(thisBoatsDivisionOrFleet)) {
+                fleetList.push(thisBoatsDivisionOrFleet);
+            }
+        }
+
+        log(`[Converter] Separating by '${separateBy}' -> Fleets/Divisions: [ ${fleetList.join(", ")} ], Club: '${clubName}'`);
+
+        const extIndex = baseFileName.lastIndexOf('.');
+        const cleanBase = extIndex > -1 ? baseFileName.substring(0, extIndex) : baseFileName;
         const outputFiles = [];
 
-        for (const [fleetName, fleetBoats] of fleetGroups.entries()) {
-            let csvLines = [];
-            
-            // Header line
-            let header = "SailNo,HelmName,BoatName,Class,Rating";
-            if (sortedRaces.length > 0) {
-                header += "," + sortedRaces.map(r => this.escapeCSV(r.name || `Race ${r.rank}`)).join(",");
-            }
-            csvLines.push(header);
+        for (const fleet of fleetList) {
+            const out = [];
+
+            // Line 1: ClubName - Fleet
+            out.push(`${clubName} - ${fleet}`);
+            // Line 2: "1"
+            out.push("1");
+
+            // Line 3: Race dates or names
+            const raceHeaders = races.map((race, idx) => {
+                let nameOrDate = race.getDate();
+                if (!nameOrDate || nameOrDate.trim().length === 0) {
+                    nameOrDate = race.getName();
+                }
+                if (!nameOrDate || nameOrDate.trim().length === 0) {
+                    nameOrDate = `noname ${idx + 1}`;
+                }
+                return this.clean(nameOrDate);
+            });
+            out.push(raceHeaders.join(","));
+
+            // Line 4: Race wind speeds
+            const windHeaders = races.map(race => this.clean(race.calculateWindSpeed()));
+            out.push(windHeaders.join(","));
 
             // Boat rows
-            for (const boat of fleetBoats) {
-                let row = [
-                    this.escapeCSV(boat.sailNo),
-                    this.escapeCSV(boat.helmName),
-                    this.escapeCSV(boat.boatName),
-                    this.escapeCSV(boat.classType),
-                    this.escapeCSV(boat.rating)
+            let boatCount = 0;
+            for (const boat of boats) {
+                const thisBoatsDivisionOrFleet = this.getThisBoatsDivisionOrFleet(boat, separateBy);
+                if (thisBoatsDivisionOrFleet !== fleet) continue;
+
+                boatCount++;
+                const row = [
+                    this.clean(boat.getBoatName()),
+                    this.clean(boat.getBoatClass()),
+                    this.clean(boat.getBoatRating()),
+                    this.clean(boat.getBoatOwner()),
+                    this.clean(boat.getSailNumber())
                 ];
 
-                for (const race of sortedRaces) {
+                for (const race of races) {
                     const res = boat.results.get(race.id);
-                    let scoreVal = "";
-                    if (res) {
-                        scoreVal = res.code ? res.code : res.points;
-                    }
-                    row.push(this.escapeCSV(scoreVal));
+                    const resultsText = res ? res.getCleanElapsedTime() : "0";
+                    row.push(resultsText);
                 }
 
-                csvLines.push(row.join(","));
+                out.push(row.join(","));
             }
 
-            const formattedFleetName = fleetName.replace(/\s+/g, "_");
-            const fileName = `${cleanBaseName}_${formattedFleetName}.csv`;
+            // Final marker
+            out.push("THEEND");
+
+            const safeClub = clubName.replace(/[\\/:*?"<>|]/g, "_");
+            const safeFleet = fleet.trim().replace(/[\\/:*?"<>|]/g, "_");
+            const outFilename = `${cleanBase}-${safeClub}-${safeFleet}.csv`;
 
             outputFiles.push({
-                fileName: fileName,
-                content: csvLines.join("\n"),
-                rowCount: fleetBoats.length
+                fileName: outFilename,
+                content: out.join(crlf) + crlf,
+                rowCount: boatCount
             });
         }
 
         return outputFiles;
-    }
-
-    static escapeCSV(val) {
-        if (!val) return '""';
-        const str = String(val);
-        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-            return '"' + str.replace(/"/g, '""') + '"';
-        }
-        return str;
     }
 }
 
@@ -376,7 +799,10 @@ class SailwaveConversion {
 // ============================================================================
 
 const dropZone = document.getElementById('dropZone');
+const dropText = document.getElementById('dropText');
 const fileInput = document.getElementById('fileInput');
+const clubNameInput = document.getElementById('clubNameInput');
+const convertBtn = document.getElementById('convertBtn');
 const statusDiv = document.getElementById('status');
 const resultsSection = document.getElementById('resultsSection');
 const fileList = document.getElementById('fileList');
@@ -384,7 +810,13 @@ const downloadZipBtn = document.getElementById('downloadZipBtn');
 const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
 
+let selectedFile = null;
 let generatedFiles = [];
+
+function getSeparateByChoice() {
+    const checked = document.querySelector('input[name="fleetdiv"]:checked');
+    return checked ? checked.value : "auto";
+}
 
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -397,21 +829,31 @@ dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-        handleFile(e.dataTransfer.files[0]);
+        stageFile(e.dataTransfer.files[0]);
     }
 });
 
 fileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
+        stageFile(e.target.files[0]);
     }
 });
 
-function handleFile(file) {
-    clearLog();
-    log(`[UI] Received file: ${file.name} (${file.size} bytes)`);
+function stageFile(file) {
+    selectedFile = file;
+    dropText.innerHTML = `Selected file: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+    convertBtn.disabled = false;
     statusDiv.className = '';
-    statusDiv.textContent = `Reading "${file.name}"...`;
+    statusDiv.textContent = '';
+}
+
+convertBtn.addEventListener('click', () => {
+    if (!selectedFile) return;
+
+    clearLog();
+    log(`[UI] Starting conversion for: ${selectedFile.name}`);
+    statusDiv.className = '';
+    statusDiv.textContent = `Converting "${selectedFile.name}"...`;
     resultsSection.style.display = 'none';
     fileList.innerHTML = '';
     selectAllCheckbox.checked = false;
@@ -420,20 +862,24 @@ function handleFile(file) {
     reader.onload = function(e) {
         try {
             const rawContent = e.target.result;
-            generatedFiles = SailwaveConversion.parseSailwaveFile(rawContent, file.name);
+            const parsedData = SailwaveConversion.parseFile(rawContent, selectedFile.name);
+            const separateBy = getSeparateByChoice();
+            const clubName = clubNameInput.value;
+
+            generatedFiles = SailwaveConversion.generatePHRFFiles(parsedData, separateBy, clubName);
 
             renderFileList(generatedFiles);
             statusDiv.textContent = '';
             resultsSection.style.display = 'block';
-            log(`[UI] Conversion complete. ${generatedFiles.length} files ready for download.`);
+            log(`[UI] Conversion complete. ${generatedFiles.length} file(s) ready.`);
         } catch (err) {
-            log(`[UI Error] Exception: ${err.message}`);
+            log(`[UI Error] ${err.message}`);
             statusDiv.className = 'error';
-            statusDiv.textContent = `Error processing file: ${err.message}`;
+            statusDiv.textContent = `*Error processing uploaded file (${selectedFile.name}): ${err.message}`;
         }
     };
-    reader.readAsText(file);
-}
+    reader.readAsText(selectedFile);
+});
 
 function renderFileList(files) {
     const now = new Date();
